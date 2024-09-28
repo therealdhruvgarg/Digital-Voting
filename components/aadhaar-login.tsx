@@ -11,12 +11,33 @@ import { motion } from "framer-motion"
 
 export default function AadhaarLogin() {
   const [aadhaar, setAadhaar] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO you'd validate the Aadhaar number here
-    router.push('/facial-recognition')
+    setIsLoading(true)
+
+    try {
+      const response = await fetch('/api/check-aadhaar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ aadhaarNumber: aadhaar }),
+      })
+
+      if (response.ok) {
+        router.push('/facial-recognition')
+      } else {
+        alert('Invalid Aadhaar number or user not found')
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      alert('An error occurred. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -67,8 +88,8 @@ export default function AadhaarLogin() {
                     onChange={(e) => setAadhaar(e.target.value)}
                   />
                 </div>
-                <Button className="w-full" type="submit">
-                  Login
+                <Button className="w-full" type="submit" disabled={isLoading}>
+                  {isLoading ? 'Checking...' : 'Login'}
                 </Button>
               </motion.form>
             </CardContent>

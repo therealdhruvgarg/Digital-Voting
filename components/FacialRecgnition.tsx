@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import Webcam from 'react-webcam'
 import { Button } from "@/components/ui/button"
 import { CardContent, Card } from "@/components/ui/card"
@@ -10,7 +11,9 @@ import { motion } from "framer-motion"
 export default function FacialRecognition() {
   const [isCapturing, setIsCapturing] = useState(true)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
+  const [isVerifying, setIsVerifying] = useState(false)
   const webcamRef = useRef<Webcam>(null)
+  const router = useRouter()
 
   const capture = useCallback(() => {
     const imageSrc = webcamRef.current?.getScreenshot()
@@ -25,9 +28,32 @@ export default function FacialRecognition() {
     setIsCapturing(true)
   }
 
-  const handleRecognition = () => {
-    //TODO you'd send the captured image to a server for facial recognition
-    alert('Facial recognition successful!')
+  const handleRecognition = async () => {
+    if (!capturedImage) return
+
+    setIsVerifying(true)
+
+    try {
+      const response = await fetch('/api/verify-facial', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ facialData: capturedImage }),
+      })
+
+      if (response.ok) {
+        alert('Facial recognition successful!')
+        router.push('/dashboard') // Redirect to dashboard or home page
+      } else {
+        alert('Facial recognition failed. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      alert('An error occurred. Please try again.')
+    } finally {
+      setIsVerifying(false)
+    }
   }
 
   return (
@@ -80,9 +106,9 @@ export default function FacialRecognition() {
                   ) : (
                     <>
                       <Button onClick={retake} variant="outline">Retake</Button>
-                      <Button onClick={handleRecognition}>
+                      <Button onClick={handleRecognition} disabled={isVerifying}>
                         <CheckCircleIcon className="mr-2 h-4 w-4" />
-                        Verify
+                        {isVerifying ? 'Verifying...' : 'Verify'}
                       </Button>
                     </>
                   )}
