@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -7,7 +9,16 @@ import { CardContent, Card } from "@/components/ui/card"
 import { IdCardIcon, TicketIcon } from "lucide-react"
 import { motion } from "framer-motion"
 
-export default function Login() {
+export default function AadhaarLogin() {
+  const [aadhaar, setAadhaar] = useState('')
+  const router = useRouter()
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // TODO you'd validate the Aadhaar number here
+    router.push('/facial-recognition')
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <motion.header 
@@ -41,6 +52,7 @@ export default function Login() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4, duration: 0.5 }}
+                onSubmit={handleSubmit}
               >
                 <div className="space-y-2">
                   <Label htmlFor="aadhaar">Aadhaar Number</Label>
@@ -51,6 +63,8 @@ export default function Login() {
                     type="text"
                     pattern="\d{4}\s?\d{4}\s?\d{4}"
                     maxLength={14}
+                    value={aadhaar}
+                    onChange={(e) => setAadhaar(e.target.value)}
                   />
                 </div>
                 <Button className="w-full" type="submit">
