@@ -2,48 +2,74 @@
 pragma solidity ^0.8.0;
 
 contract Voting {
-    // Store candidates and votes
+    // Candidate structure
     struct Candidate {
-        uint id;
         string name;
         uint voteCount;
     }
 
-    // Store voters' information
+    // Store the candidates
+    Candidate[] public candidates;
+
+    // Track who has voted
     mapping(address => bool) public voters;
-    mapping(uint => Candidate) public candidates;
-    uint public candidatesCount;
 
-    // Event to trigger after a vote is cast
-    event votedEvent(uint indexed candidateId);
+    // Address of the owner (who deployed the contract)
+    address public owner;
 
-    // Add candidate function
-    // constructor() {
-    //     addCandidate("Alice");
-    //     addCandidate("Bob");
-    // }
+    // Event to notify when a vote is cast
+    event VoteCasted(address voter, string candidate);
 
-    // Function to add a candidate
-    function addCandidate(string memory _name) private {
-        candidatesCount++;
-        candidates[candidatesCount] = Candidate(candidatesCount, _name, 0);
+    // Modifier to restrict some functions to the owner
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only the owner can call this function");
+        _;
     }
 
-    // Function to cast a vote
-    function vote(uint _candidateId) public {
-        // Ensure the voter hasn't voted before
-        require(!voters[msg.sender], "You have already voted!");
+    constructor(string[] memory candidateNames) {
+    require(candidateNames.length > 0, "Candidate names array is empty");
+    owner = msg.sender;
+    for (uint i = 0; i < candidateNames.length; i++) {
+        candidates.push(Candidate({
+            name: candidateNames[i],
+            voteCount: 0
+        }));
+    }
+}
 
-        // Ensure valid candidate
-        require(_candidateId > 0 && _candidateId <= candidatesCount, "Invalid candidate!");
 
-        // Record that voter has voted
+    // Function to cast a vote for a candidate
+    function vote(uint candidateIndex) public {
+        require(!voters[msg.sender], "You have already voted");
+        require(candidateIndex < candidates.length, "Invalid candidate index");
+
+        // Mark the voter as having voted
         voters[msg.sender] = true;
 
-        // Update vote count of candidate
-        candidates[_candidateId].voteCount++;
+        // Increase the vote count of the selected candidate
+        candidates[candidateIndex].voteCount += 1;
 
-        // Trigger voted event
-        emit votedEvent(_candidateId);
+        // Emit a voting event
+        emit VoteCasted(msg.sender, candidates[candidateIndex].name);
+    }
+
+    // Function to get the number of candidates
+    function getNumberOfCandidates() public view returns (uint) {
+        return candidates.length;
+    }
+
+    // Function to get candidate details by index
+    function getCandidate(uint index) public view returns (string memory name, uint voteCount) {
+        require(index < candidates.length, "Invalid candidate index");
+        return (candidates[index].name, candidates[index].voteCount);
+    }
+
+    // Function to get all candidate names (for the frontend)
+    function getAllCandidates() public view returns (string[] memory) {
+        string[] memory candidateNames = new string[](candidates.length);
+        for (uint i = 0; i < candidates.length; i++) {
+            candidateNames[i] = candidates[i].name;
+        }
+        return candidateNames;
     }
 }
