@@ -8,7 +8,7 @@ const VotingComponent = () => {
   const [candidateId, setCandidateId] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const contractAddress = "0x25C6fEb1586A2cDa0347b624d9a69427F0D4C71C";  // Truffle Develop contract address
+  const contractAddress = "0x139Bc8d295C500D79a64Bbc80cBe68e1Fa72ef97";  // Make sure this matches your deployment
   const votingInstance = new web3.eth.Contract(VotingContract.abi, contractAddress);
 
   useEffect(() => {
@@ -17,10 +17,11 @@ const VotingComponent = () => {
         const accounts = await web3.eth.getAccounts();
         setAccounts(accounts);
 
-        // Fetch the candidates count
+        // Fetch the number of candidates
         const candidatesCount = await votingInstance.methods.candidatesCount().call();
         const candidatesArray = [];
 
+        // Fetch all candidates
         for (let i = 1; i <= candidatesCount; i++) {
           const candidate = await votingInstance.methods.candidates(i).call();
           candidatesArray.push(candidate);
@@ -28,6 +29,7 @@ const VotingComponent = () => {
         setCandidates(candidatesArray);
       } catch (error) {
         console.error("Error loading blockchain data:", error);
+        alert("Failed to load blockchain data. Make sure MetaMask is connected.");
       }
     };
 
@@ -35,9 +37,20 @@ const VotingComponent = () => {
   }, []);
 
   const voteForCandidate = async () => {
+    if (!candidateId || candidateId <= 0) {
+      alert("Please enter a valid candidate ID");
+      return;
+    }
+  
     setLoading(true);
     try {
-      await votingInstance.methods.vote(candidateId).send({ from: accounts[0] });
+      const gasPrice = await web3.eth.getGasPrice(); // Get current gas price from the network
+      
+      await votingInstance.methods.vote(candidateId).send({
+        from: accounts[0],
+        gasPrice: gasPrice // Explicitly specify gasPrice for legacy transactions
+      });
+  
       alert("Vote cast successfully!");
     } catch (error) {
       console.error("Error voting:", error);
@@ -45,6 +58,7 @@ const VotingComponent = () => {
     }
     setLoading(false);
   };
+  
 
   return (
     <div>
