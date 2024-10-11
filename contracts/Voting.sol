@@ -39,19 +39,14 @@ contract Voting {
 
 
     // Function to cast a vote for a candidate
-    function vote(uint candidateIndex) public {
-        require(!voters[msg.sender], "You have already voted");
-        require(candidateIndex < candidates.length, "Invalid candidate index");
+    function vote(uint candidateId) public {
+    require(!voters[msg.sender], "You have already voted.");  // Ensure the user hasn't already voted
+    require(candidateId >= 0 && candidateId < candidates.length, "Invalid candidate.");  // Ensure valid candidate ID
 
-        // Mark the voter as having voted
-        voters[msg.sender] = true;
+    voters[msg.sender] = true;  // Record the vote
+    candidates[candidateId].voteCount++;
+}
 
-        // Increase the vote count of the selected candidate
-        candidates[candidateIndex].voteCount += 1;
-
-        // Emit a voting event
-        emit VoteCasted(msg.sender, candidates[candidateIndex].name);
-    }
 
     // Function to get the number of candidates
     function getNumberOfCandidates() public view returns (uint) {

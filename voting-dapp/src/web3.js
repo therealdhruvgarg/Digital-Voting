@@ -1,15 +1,21 @@
 import Web3 from "web3";
 
 let web3;
-
-if (typeof window !== "undefined" && typeof window.ethereum !== "undefined") {
-  // MetaMask is available
-  window.ethereum.request({ method: "eth_requestAccounts" });
+if (window.ethereum) {
+  // Modern dapp browsers with MetaMask
   web3 = new Web3(window.ethereum);
+  try {
+    // Request account access if needed
+    await window.ethereum.enable();
+  } catch (error) {
+    console.error("User denied account access.");
+  }
+} else if (window.web3) {
+  // Legacy dapp browsers
+  web3 = new Web3(window.web3.currentProvider);
 } else {
-  // Fallback to Truffle Develop network
-  const provider = new Web3.providers.HttpProvider("http://127.0.0.1:9545");
-  web3 = new Web3(provider);
+  // Non-dapp browsers
+  console.log("Non-Ethereum browser detected. You should consider trying MetaMask!");
 }
 
 export default web3;
