@@ -7,6 +7,7 @@ const VotingComponent = () => {
   const [candidateId, setCandidateId] = useState("");
   const [voted, setVoted] = useState(false);
   const [candidates, setCandidates] = useState([]);
+  const [totalVotes, setTotalVotes] = useState(0);
 
   useEffect(() => {
     loadBlockchainData();
@@ -30,11 +31,16 @@ const VotingComponent = () => {
     // Load candidates
     const candidatesCount = await votingInstance.methods.candidatesCount().call();
     const loadedCandidates = [];
+    let totalVotesCount = 0;
+
     for (let i = 1; i <= candidatesCount; i++) {
       const candidate = await votingInstance.methods.candidates(i).call();
       loadedCandidates.push(candidate);
+      totalVotesCount += parseInt(candidate.voteCount); // Sum up the votes
     }
+
     setCandidates(loadedCandidates);
+    setTotalVotes(totalVotesCount); // Set the total votes
   };
 
   const voteForCandidate = async () => {
@@ -45,17 +51,17 @@ const VotingComponent = () => {
         Voting.abi,
         deployedNetwork && deployedNetwork.address
       );
-  
+
       // Check if the network supports EIP-1559
       const latestBlock = await web3.eth.getBlock("latest");
       const supportsEIP1559 = latestBlock.baseFeePerGas !== undefined;
-  
+
       let txParams = {
         from: account,
         to: deployedNetwork.address,
         data: votingInstance.methods.vote(candidateId).encodeABI(),
       };
-  
+
       if (supportsEIP1559) {
         const maxFeePerGas = await web3.eth.getMaxFeePerGas();
         const maxPriorityFeePerGas = await web3.eth.getMaxPriorityFeePerGas();
@@ -66,23 +72,23 @@ const VotingComponent = () => {
         const gasPrice = await web3.eth.getGasPrice();
         txParams.gasPrice = gasPrice;
       }
-  
+
       // Send transaction
       await web3.eth.sendTransaction(txParams);
-  
+
       alert("Vote cast successfully!");
       setVoted(true); // Block the vote button after voting
+      loadBlockchainData(); // Refresh data to show updated vote counts
     } catch (error) {
       console.error("Error voting:", error);
       alert("There was an error while trying to cast your vote.");
     }
   };
-  
 
   return (
     <div>
       <h1>Blockchain Voting DApp</h1>
-      <p>Account: {account}</p>
+      <p>Account: {account ? account : "Please connect MetaMask to vote"}</p>
 
       <h2>Candidates</h2>
       <ul>
@@ -93,16 +99,22 @@ const VotingComponent = () => {
         ))}
       </ul>
 
-      <h2>Vote for a Candidate</h2>
-      <input
-        type="text"
-        value={candidateId}
-        onChange={e => setCandidateId(e.target.value)}
-        placeholder="Enter Candidate ID"
-      />
-      <button onClick={voteForCandidate} disabled={voted}>
-        {voted ? "You have already voted" : "Vote"}
-      </button>
+      <h2>Total Votes Cast: {totalVotes}</h2>
+
+      {account && (
+        <>
+          <h2>Vote for a Candidate</h2>
+          <input
+            type="text"
+            value={candidateId}
+            onChange={e => setCandidateId(e.target.value)}
+            placeholder="Enter Candidate ID"
+          />
+          <button onClick={voteForCandidate} disabled={voted}>
+            {voted ? "You have already voted" : "Vote"}
+          </button>
+        </>
+      )}
     </div>
   );
 };

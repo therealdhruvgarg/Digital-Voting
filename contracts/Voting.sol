@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 contract Voting {
@@ -8,14 +7,13 @@ contract Voting {
         uint voteCount;
     }
 
-    // Mapping to keep track of whether an account has voted
-    mapping(address => bool) public hasVoted;
+    mapping(address => bool) public voters;  // Tracks whether an address has voted
     mapping(uint => Candidate) public candidates;
     uint public candidatesCount;
 
     constructor() {
-        addCandidate("Candidate 1");
-        addCandidate("Candidate 2");
+        addCandidate("Alice");
+        addCandidate("Bob");
     }
 
     function addCandidate(string memory _name) private {
@@ -24,10 +22,21 @@ contract Voting {
     }
 
     function vote(uint _candidateId) public {
-        require(!hasVoted[msg.sender], "You have already voted.");
+        // Ensure the voter hasn't voted before
+        require(!voters[msg.sender], "You have already voted.");
+
+        // Ensure the candidate is valid
         require(_candidateId > 0 && _candidateId <= candidatesCount, "Invalid candidate ID.");
 
+        // Record that the voter has voted
+        voters[msg.sender] = true;
+
+        // Update candidate vote count
         candidates[_candidateId].voteCount++;
-        hasVoted[msg.sender] = true;
+    }
+
+    // Function to check if the user has voted
+    function hasVoted(address _voter) public view returns (bool) {
+        return voters[_voter];
     }
 }
