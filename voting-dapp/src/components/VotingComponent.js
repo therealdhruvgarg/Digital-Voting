@@ -21,7 +21,7 @@ const VotingComponent = () => {
     const deployedNetwork = Voting.networks[networkId];
     const votingInstance = new web3.eth.Contract(
       Voting.abi,
-      deployedNetwork && deployedNetwork.address
+      '0xa8a50bDd6c2cE89178A7DE4D81422Ce70E29FB77'
     );
 
     // Check if the user has already voted
@@ -51,39 +51,28 @@ const VotingComponent = () => {
         Voting.abi,
         deployedNetwork && deployedNetwork.address
       );
-
-      // Check if the network supports EIP-1559
-      const latestBlock = await web3.eth.getBlock("latest");
-      const supportsEIP1559 = latestBlock.baseFeePerGas !== undefined;
-
+  
+      // Fetch current gas price (fallback for non-EIP-1559 networks)
+      const gasPrice = await web3.eth.getGasPrice();
+  
       let txParams = {
         from: account,
         to: deployedNetwork.address,
         data: votingInstance.methods.vote(candidateId).encodeABI(),
+        gasPrice: gasPrice,  // Use legacy gas price
       };
-
-      if (supportsEIP1559) {
-        const maxFeePerGas = await web3.eth.getMaxFeePerGas();
-        const maxPriorityFeePerGas = await web3.eth.getMaxPriorityFeePerGas();
-        txParams.maxFeePerGas = maxFeePerGas;
-        txParams.maxPriorityFeePerGas = maxPriorityFeePerGas;
-      } else {
-        // Fallback to legacy gasPrice if the network doesn't support EIP-1559
-        const gasPrice = await web3.eth.getGasPrice();
-        txParams.gasPrice = gasPrice;
-      }
-
+  
       // Send transaction
       await web3.eth.sendTransaction(txParams);
-
+  
       alert("Vote cast successfully!");
-      setVoted(true); // Block the vote button after voting
-      loadBlockchainData(); // Refresh data to show updated vote counts
+      setVoted(true);  // Block the vote button after voting
     } catch (error) {
       console.error("Error voting:", error);
       alert("There was an error while trying to cast your vote.");
     }
   };
+  
 
   return (
     <div>
