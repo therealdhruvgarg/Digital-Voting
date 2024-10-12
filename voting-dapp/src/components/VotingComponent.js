@@ -3,43 +3,39 @@ import web3 from "../web3";
 import Voting from "../contracts/Voting.json";
 
 const VotingComponent = () => {
-  const [account, setAccount] = useState("");
-  const [candidates, setCandidates] = useState([]);
+  const [account, setAccount] = useState(null);
   const [candidateId, setCandidateId] = useState("");
   const [voted, setVoted] = useState(false);
+  const [candidates, setCandidates] = useState([]);
 
   useEffect(() => {
-    const loadBlockchainData = async () => {
-      try {
-        const accounts = await web3.eth.getAccounts();
-        setAccount(accounts[0]);
-
-        const networkId = await web3.eth.net.getId();
-        const deployedNetwork = Voting.networks[networkId];
-        const votingInstance = new web3.eth.Contract(
-          Voting.abi,
-          deployedNetwork && deployedNetwork.address
-        );
-
-        // Fetch candidates
-        const candidatesCount = await votingInstance.methods.candidatesCount().call();
-        let candidateList = [];
-        for (let i = 1; i <= candidatesCount; i++) {
-          const candidate = await votingInstance.methods.candidates(i).call();
-          candidateList.push(candidate);
-        }
-        setCandidates(candidateList);
-
-        // Check if user has already voted
-        const hasVoted = await votingInstance.methods.voters(accounts[0]).call();
-        setVoted(hasVoted);
-      } catch (error) {
-        console.error("Error loading blockchain data:", error);
-      }
-    };
-
     loadBlockchainData();
   }, []);
+
+  const loadBlockchainData = async () => {
+    const accounts = await web3.eth.getAccounts();
+    setAccount(accounts[0]);
+
+    const networkId = await web3.eth.net.getId();
+    const deployedNetwork = Voting.networks[networkId];
+    const votingInstance = new web3.eth.Contract(
+      Voting.abi,
+      deployedNetwork && deployedNetwork.address
+    );
+
+    // Check if the user has already voted
+    const hasVoted = await votingInstance.methods.hasVoted(accounts[0]).call();
+    setVoted(hasVoted);
+
+    // Load candidates
+    const candidatesCount = await votingInstance.methods.candidatesCount().call();
+    const loadedCandidates = [];
+    for (let i = 1; i <= candidatesCount; i++) {
+      const candidate = await votingInstance.methods.candidates(i).call();
+      loadedCandidates.push(candidate);
+    }
+    setCandidates(loadedCandidates);
+  };
 
   const voteForCandidate = async () => {
     try {
@@ -50,20 +46,32 @@ const VotingComponent = () => {
         deployedNetwork && deployedNetwork.address
       );
   
-      if (!voted) {
-        // Use legacy gas pricing (for non-EIP-1559 networks)
-        const gasPrice = await web3.eth.getGasPrice();  // Get the current gas price
-        
-        await votingInstance.methods.vote(candidateId).send({
-          from: account,
-          gasPrice: gasPrice,  // Specify the legacy gas price here
-        });
-        
-        alert("Vote cast successfully!");
-        setVoted(true);  // Update state after voting
+      // Check if the network supports EIP-1559
+      const latestBlock = await web3.eth.getBlock("latest");
+      const supportsEIP1559 = latestBlock.baseFeePerGas !== undefined;
+  
+      let txParams = {
+        from: account,
+        to: deployedNetwork.address,
+        data: votingInstance.methods.vote(candidateId).encodeABI(),
+      };
+  
+      if (supportsEIP1559) {
+        const maxFeePerGas = await web3.eth.getMaxFeePerGas();
+        const maxPriorityFeePerGas = await web3.eth.getMaxPriorityFeePerGas();
+        txParams.maxFeePerGas = maxFeePerGas;
+        txParams.maxPriorityFeePerGas = maxPriorityFeePerGas;
       } else {
-        alert("You have already voted.");
+        // Fallback to legacy gasPrice if the network doesn't support EIP-1559
+        const gasPrice = await web3.eth.getGasPrice();
+        txParams.gasPrice = gasPrice;
       }
+  
+      // Send transaction
+      await web3.eth.sendTransaction(txParams);
+  
+      alert("Vote cast successfully!");
+      setVoted(true); // Block the vote button after voting
     } catch (error) {
       console.error("Error voting:", error);
       alert("There was an error while trying to cast your vote.");
@@ -78,22 +86,22 @@ const VotingComponent = () => {
 
       <h2>Candidates</h2>
       <ul>
-        {candidates.map((candidate) => (
+        {candidates.map(candidate => (
           <li key={candidate.id}>
-            {candidate.id}. {candidate.name} - Votes: {candidate.voteCount}
+            {candidate.name} (Votes: {candidate.voteCount})
           </li>
         ))}
       </ul>
 
       <h2>Vote for a Candidate</h2>
       <input
-        type="number"
+        type="text"
         value={candidateId}
-        onChange={(e) => setCandidateId(e.target.value)}
+        onChange={e => setCandidateId(e.target.value)}
         placeholder="Enter Candidate ID"
       />
       <button onClick={voteForCandidate} disabled={voted}>
-        {voted ? "Already Voted" : "Vote"}
+        {voted ? "You have already voted" : "Vote"}
       </button>
     </div>
   );
