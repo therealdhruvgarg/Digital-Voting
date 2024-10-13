@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { mockDatabase } from "../mockData/mockDatabase";
 import { generateOTP, verifyOTP } from "../utils/otp";
 import VotingComponent from "./VotingComponent";
+import '../index.css'
 
 const Login = () => {
   const [aadhaar, setAadhaar] = useState("");
@@ -40,30 +41,32 @@ const Login = () => {
 
   return (
     <div>
-      <h2>Login to Vote</h2>
+      <h2 className="text-2xl font-semibold  w-fit mt-3">Login to Vote</h2>
       {!otpSent ? (
-        <>
+        <div className="my-2">
           <input
             type="text"
             placeholder="Enter 12-digit Aadhaar number"
             value={aadhaar}
             onChange={(e) => setAadhaar(e.target.value)}
+            className="mr-5 border rounded-xl px-2 py-1 text-lg"
           />
-          <button onClick={handleAadhaarSubmit}>Submit Aadhaar</button>
-          {error && <p>{error}</p>}
-        </>
+          <button className="rounded-2xl py-1 px-3 uppercase font-semibold cursor-pointer tracking-wider text-gray-400 border-gray-400 md:border-2 ml-2 hover:bg-gray-400 hover:text-white transition ease-out duration-500" onClick={handleAadhaarSubmit}>Submit Aadhaar</button>
+          {error && <p className="text-red-400 text-lg">{error}</p>}
+        </div>
       ) : (
-        <>
-          <p>OTP sent to mobile: {mobile}</p>
+        <div>
+          <p className="text-lg py-2 text-gray-600">OTP sent to mobile: {mobile}</p>
           <input
             type="text"
             placeholder="Enter OTP"
             value={otp}
             onChange={(e) => setOtp(e.target.value)}
+            className="mr-5 border rounded-2xl py-1 px-3"
           />
-          <button onClick={handleOtpSubmit}>Submit OTP</button>
-          {error && <p>{error}</p>}
-        </>
+          <button className="rounded-2xl py-1 px-3 uppercase font-semibold cursor-pointer tracking-wider text-gray-400 border-gray-400 md:border-2 ml-2 hover:bg-gray-400 hover:text-white transition ease-out duration-500" onClick={handleOtpSubmit}>Submit OTP</button>
+          {error && <p className="text-lg text-red-400 py-2">{error}</p>}
+        </div>
       )}
     </div>
   );
