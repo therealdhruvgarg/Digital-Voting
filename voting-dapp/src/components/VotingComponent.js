@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import web3 from "../web3";
 import Voting from "../contracts/Voting.json";
+import '../index.css'
 
 const VotingComponent = () => {
   const [account, setAccount] = useState(null);
@@ -76,10 +77,10 @@ const VotingComponent = () => {
 
   return (
     <div>
-      <h1>Blockchain Voting DApp</h1>
-      <p>Account: {account ? account : "Please connect MetaMask to vote"}</p>
+      <h1 className="text-2xl font-semibold  w-fit mt-3" >Blockchain Voting DApp</h1>
+      <p className="text-lg pt-2 text-gray-600">Account: {account ? account : "Please connect MetaMask to vote"}</p>
 
-      <h2>Candidates</h2>
+      <h2 className="text-lg py-2 text-gray-800">Candidates</h2>
       <ul>
         {candidates.map(candidate => (
           <li key={candidate.id}>
@@ -88,18 +89,19 @@ const VotingComponent = () => {
         ))}
       </ul>
 
-      <h2>Total Votes Cast: {totalVotes}</h2>
+      {/* <h2>Total Votes Cast: {totalVotes}</h2> */}
 
       {account && (
         <>
-          <h2>Vote for a Candidate</h2>
+          <h2 className="text-lg py-2 text-gray-600">Vote for a Candidate</h2>
           <input
             type="text"
             value={candidateId}
             onChange={e => setCandidateId(e.target.value)}
             placeholder="Enter Candidate ID"
+            className="mr-5 border rounded-xl px-2 py-1 text-lg"
           />
-          <button onClick={voteForCandidate} disabled={voted}>
+          <button className="rounded-2xl py-1 px-3 uppercase font-semibold cursor-pointer tracking-wider text-gray-400 border-gray-400 md:border-2 ml-2 hover:bg-gray-400 hover:text-white transition ease-out duration-500" onClick={voteForCandidate} disabled={voted}>
             {voted ? "You have already voted" : "Vote"}
           </button>
         </>
