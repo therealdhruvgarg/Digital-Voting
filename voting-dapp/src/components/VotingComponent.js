@@ -5,7 +5,6 @@ import '../index.css'
 
 const VotingComponent = () => {
   const [account, setAccount] = useState(null);
-  const [candidateId, setCandidateId] = useState("");
   const [voted, setVoted] = useState(false);
   const [candidates, setCandidates] = useState([]);
   const [totalVotes, setTotalVotes] = useState(0);
@@ -44,7 +43,7 @@ const VotingComponent = () => {
     setTotalVotes(totalVotesCount); // Set the total votes
   };
 
-  const voteForCandidate = async () => {
+  const voteForCandidate = async (candidateId) => {
     try {
       const networkId = await web3.eth.net.getId();
       const deployedNetwork = Voting.networks[networkId];
@@ -73,7 +72,6 @@ const VotingComponent = () => {
       alert("There was an error while trying to cast your vote.");
     }
   };
-  
 
   return (
     <div>
@@ -83,29 +81,23 @@ const VotingComponent = () => {
       <h2 className="text-lg py-2 text-gray-800">Candidates</h2>
       <ul>
         {candidates.map(candidate => (
-          <li key={candidate.id}>
-            {candidate.name} (Votes: {candidate.voteCount})
+          <li key={candidate.id} className="flex items-center justify-between">
+            <span>
+              {candidate.name} (Votes: {candidate.voteCount})
+            </span>
+            <button
+              className="rounded-2xl py-1 px-3 uppercase font-semibold cursor-pointer tracking-wider text-gray-400 border-gray-400 md:border-2 ml-2 hover:bg-gray-400 hover:text-white transition ease-out duration-500"
+              onClick={() => voteForCandidate(candidate.id)}
+              disabled={voted}
+            >
+              {voted ? "You have already voted" : "Vote"}
+            </button>
           </li>
         ))}
       </ul>
 
       {/* <h2>Total Votes Cast: {totalVotes}</h2> */}
 
-      {account && (
-        <>
-          <h2 className="text-lg py-2 text-gray-600">Vote for a Candidate</h2>
-          <input
-            type="text"
-            value={candidateId}
-            onChange={e => setCandidateId(e.target.value)}
-            placeholder="Enter Candidate ID"
-            className="mr-5 border rounded-xl px-2 py-1 text-lg"
-          />
-          <button className="rounded-2xl py-1 px-3 uppercase font-semibold cursor-pointer tracking-wider text-gray-400 border-gray-400 md:border-2 ml-2 hover:bg-gray-400 hover:text-white transition ease-out duration-500" onClick={voteForCandidate} disabled={voted}>
-            {voted ? "You have already voted" : "Vote"}
-          </button>
-        </>
-      )}
     </div>
   );
 };
